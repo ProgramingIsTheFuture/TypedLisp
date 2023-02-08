@@ -1,0 +1,4 @@
+(executable
+ (name typed_lisp)
+ (public_name typed_lisp)
+ (libraries typed_lisp))
