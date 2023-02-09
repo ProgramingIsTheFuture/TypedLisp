@@ -9,6 +9,9 @@ rule token = parse
 | ')' {RPARENT}
 | '['{LSBRAK}
 | ']'{RSBRAK}
+| ',' {COMMA}
+| "defun" {DEFUN}
+| "defar" {DEFAR}
 | ['a'-'z' 'A'-'Z' '+' '+']+ as n {NAME n}
 | ['0'-'9']+ as i {VALUE (VInt (int_of_string i))}
 | '"'[^ '"']+'"' as s {VALUE (VString s)}

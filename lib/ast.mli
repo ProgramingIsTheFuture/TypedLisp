@@ -1,12 +1,7 @@
-type value =
-  | VInt of int
-  | VString of string
-  | VList of expr list
-
-and expr =
-  | Const of value
-  | Var of string
+type value = VInt of int | VString of string
+type expr = Const of value | Var of string | Apply of string * expr list
 
 type ast =
-  | Apply of string * ast list
+  | Defun of string * string list * ast
+  | Defar of string * expr
   | Value of expr

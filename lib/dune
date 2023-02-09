@@ -1,6 +1,6 @@
 (library
  (name typed_lisp)
- (modules_without_implementation ast))
+ (modules_without_implementation ast typedast))
 
 (ocamllex
   (modules lexer))
