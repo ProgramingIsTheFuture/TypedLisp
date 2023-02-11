@@ -25,7 +25,7 @@ expr:
 ast:
   | "(" DEFAR n = NAME e = expr ")"
     { Defar (n, e) }
-  | "(" DEFUN n = NAME "[" p = list(NAME)? "]" a = ast ")"
+  | "(" DEFUN n = NAME "[" p = list(NAME)? "]" a = expr ")"
     { 
       let p = match p with Some p -> p | None -> [] in
       Defun (n, p, a) 

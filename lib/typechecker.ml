@@ -12,6 +12,14 @@ let rec head = function
   | TSeq (t1, t2) -> TSeq (head t1, head t2)
   | _ as t -> t
 
+let rec str_of_typ = function
+  | TInt -> "int"
+  | TString -> "string"
+  | TVoid -> "void"
+  | TSeq (t1, t2) -> "(" ^ str_of_typ t1 ^ " -> " ^ str_of_typ t2 ^ ")"
+  | TVar { def = Some t; _ } -> str_of_typ t
+  | TVar { def = None; _ } -> "'a"
+
 let occur tv t =
   let t = head t in
   match t with TVar t -> t = tv | _ -> false
@@ -30,7 +38,8 @@ let rec unify t1 t2 =
       unify t12 t22
   | TSeq (t11, _), t2 -> unify t11 t2
   | t1, TSeq (t21, _) -> unify t1 t21
-  | _, _ -> failwith "Failed to type it!"
+  | t1, t2 ->
+      failwith ("Expected " ^ str_of_typ t1 ^ " but got " ^ str_of_typ t2)
 
 module VMap = Map.Make (String)
 
@@ -42,14 +51,24 @@ let rec type_of_expr map = function
   | Const v -> ( match v with VInt _ -> TInt | VString _ -> TString)
   | Apply (s, expr) ->
       let t = VMap.find s map in
+
+      let rec seq = function
+        | [] -> TVar (create_tvar ())
+        | e :: tl -> TSeq (type_of_expr map e, seq tl)
+      in
+
       let rec h t l =
-        match (t, l) with
+        match (head t, l) with
         | TSeq (t1, t'), expr_1 :: exprl ->
             unify t1 (type_of_expr map expr_1);
             h t' exprl
         | t, [] -> head t
-        | _ -> assert false
+        | TVar ({ def = None; _ } as t), exprl ->
+            t.def <- Some (seq exprl);
+            h (TVar t) exprl
+        | _, _ -> assert false
       in
+
       h t expr
 
 let rec typechecker map : Ast.ast list -> Typedast.ast list = function
@@ -66,12 +85,12 @@ let rec typechecker map : Ast.ast list -> Typedast.ast list = function
           (fun m ss -> VMap.add ss (TVar (create_tvar ())) m)
           map params
       in
-      let t = typechecker map_params [ ast ] |> List.hd in
+      let t = type_of_expr map_params ast in
       let final_t =
-        if params = [] then TSeq (TVoid, t.typ)
+        if params = [] then TSeq (TVoid, t)
         else
           let rec join = function
-            | [] -> t.typ
+            | [] -> t
             | ss :: tl ->
                 let t = VMap.find ss map_params in
                 TSeq (t, join tl)

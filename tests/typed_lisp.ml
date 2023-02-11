@@ -3,7 +3,7 @@ let () =
   assert (
     Typed_lisp.parse_code "(defun add [a b] (+ a b)) (add 10 15)"
     = [
-        Defun ("add", [ "a"; "b" ], Value (Apply ("+", [ Var "a"; Var "b" ])));
+        Defun ("add", [ "a"; "b" ], Apply ("+", [ Var "a"; Var "b" ]));
         Value (Apply ("add", [ Const (VInt 10); Const (VInt 15) ]));
       ]
       (* Apply("defun", [Value (Var"add");  *)
@@ -52,7 +52,7 @@ let _ =
     typechecker baseMap code
     = [
         {
-          ast = Defun ("id", [ "x" ], Value (Var "x"));
+          ast = Defun ("id", [ "x" ], Var "x");
           typ = TSeq (TVar { id = 1; def = None }, TVar { id = 1; def = None });
         };
       ])
@@ -61,16 +61,19 @@ let _ =
   let open Typed_lisp__Typechecker in
   let open Typed_lisp__Typedast in
   let open Typed_lisp__Ast in
-  let code = Typed_lisp.parse_code "(defun id [x] x) (id 10)" in
+  let code = Typed_lisp.parse_code "(defun id [x y] (+ x y)) (id 10)" in
   assert (
     typechecker baseMap code
     = [
         {
-          ast = Defun ("id", [ "x" ], Value (Var "x"));
+          ast = Defun ("id", [ "x"; "y" ], Apply ("+", [ Var "x"; Var "y" ]));
           typ =
             TSeq
               ( TVar { id = 2; def = Some TInt },
-                TVar { id = 2; def = Some TInt } );
+                TSeq (TVar { id = 3; def = Some TInt }, TInt) );
         };
-        { ast = Value (Apply ("id", [ Const (VInt 10) ])); typ = TInt };
+        {
+          ast = Value (Apply ("id", [ Const (VInt 10) ]));
+          typ = TSeq (TInt, TInt);
+        };
       ])
